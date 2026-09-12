@@ -1,0 +1,10 @@
+# Archivos de levantamiento: contienen datos de la organización analizada
+*.json
+*.xlsx
+*.xls
+*.csv
+
+# Sistema
+Thumbs.db
+desktop.ini
+.DS_Store
