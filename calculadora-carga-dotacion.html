@@ -173,16 +173,91 @@ th[title]:hover .i, td[title]:hover .i, div[title]:hover .i{opacity:1}
 .leyenda{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:8px 18px;margin-top:12px}
 .leyenda div{font-size:11.5px;color:var(--gris);line-height:1.4}
 .leyenda b{color:var(--azul)}
+
+/* ---------------- tablero ----------------
+   Un tablero es una sola pregunta hecha desde varios ángulos, así que todos
+   los visuales comparten un único estado de filtro y cada uno es a la vez
+   filtro y resultado: al hacer clic en una porción, las demás se recalculan.
+   Lo que NO se recalcula es el propio visual donde se hizo clic — ahí se
+   resalta la selección y se deja ver el resto en gris, que es lo que permite
+   comparar la parte contra el todo sin perder el contexto. */
+.tb-slic{display:flex;flex-wrap:wrap;gap:6px}
+/* La lista de dotaciones puede pasar de cincuenta: se le pone tope y se
+   desplaza, en vez de empujar el tablero hacia abajo. */
+.tb-slic-alto{max-height:132px;overflow-y:auto;padding:2px;border:1px solid var(--linea);
+  border-radius:7px;background:var(--fondo);align-content:flex-start}
+.tb-chip{border:1px solid var(--linea);background:#fff;border-radius:999px;padding:4px 11px;
+  font-size:12px;color:var(--gris);cursor:pointer;white-space:nowrap;transition:background .12s,color .12s}
+.tb-chip:hover{background:var(--azul-claro);color:var(--azul)}
+.tb-chip.on{background:var(--azul);border-color:var(--azul);color:#fff;font-weight:600}
+.tb-chip .c{opacity:.65;margin-left:5px;font-variant-numeric:tabular-nums}
+.tb-act{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin-top:10px;min-height:26px}
+.tb-act .et{font-size:11px;color:var(--gris)}
+.tb-act .f{background:var(--amar);color:var(--amar-t);border:1px solid #E8C48A;border-radius:5px;
+  padding:3px 8px;font-size:11px;font-weight:600;cursor:pointer}
+.tb-act .f:hover{background:#FFE9A8}
+.tb-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(330px,1fr));gap:16px}
+.tb-vis h3{font-size:13px;margin-bottom:2px}
+.tb-vis .sub{font-size:11px;color:var(--gris);margin-bottom:10px}
+.tb-bars{display:flex;flex-direction:column;gap:6px}
+.tb-b{display:grid;grid-template-columns:1fr 62px;gap:8px;align-items:center;cursor:pointer;
+  padding:3px 4px;border-radius:5px;transition:background .12s}
+.tb-b:hover{background:var(--azul-claro)}
+.tb-b.off{opacity:.32}
+.tb-b .lab{font-size:11.5px;line-height:1.25}
+.tb-b .track{height:9px;background:var(--fondo);border-radius:999px;overflow:hidden;margin-top:3px}
+.tb-b .fill{height:100%;border-radius:999px;background:var(--azul2)}
+.tb-b .val{text-align:right;font-size:11.5px;font-weight:600;font-variant-numeric:tabular-nums;color:var(--azul)}
+.tb-b .val span{display:block;font-size:9.5px;font-weight:400;color:var(--gris)}
+.tb-leg{display:flex;flex-wrap:wrap;gap:4px 14px;margin-top:10px}
+.tb-leg div{display:flex;align-items:center;gap:6px;font-size:11.5px;cursor:pointer;padding:2px 4px;border-radius:4px}
+.tb-leg div:hover{background:var(--azul-claro)}
+.tb-leg div.off{opacity:.32}
+.tb-leg i{width:11px;height:11px;border-radius:3px;display:inline-block;flex:none}
+.tb-leg b{font-variant-numeric:tabular-nums}
+.tb-donut{display:block;margin:0 auto;max-width:100%;height:auto}
+.tb-donut path{cursor:pointer;transition:opacity .12s}
+/* El total va dibujado en el hueco de la dona; sin esto se come los clics de
+   las porciones que pasan por debajo. */
+.tb-donut text{pointer-events:none;user-select:none}
+.tb-donut path.off{opacity:.3}
+.tb-vacio{font-size:12px;color:var(--gris);padding:18px 4px;text-align:center}
+/* El inventario completo puede pasar de 300 renglones: se le pone tope y
+   cabecera fija para que el tablero siga siendo navegable de un vistazo. */
+.panel[data-p="tablero"] thead th{position:sticky;top:0;z-index:2}
+.tb-par td{font-size:11.5px}
+.tb-par tr{cursor:pointer}
+.tb-par tr:hover td{background:var(--azul-claro)}
+.tb-par tr.sel td{background:var(--amar)}
+.tb-par .mini{display:block;font-size:10px;color:var(--gris)}
+@media print{.panel[data-p="tablero"] .tb-slic,.panel[data-p="tablero"] .tb-act{display:none}}
 /* ---------- la hoja que se imprime ----------
    Mientras no se imprime, #hojaImpresion no existe para el usuario. Al
    imprimir se invierte: la aplicación entera desaparece y queda solo la hoja,
    sin cabecera, sin pestañas y sin controles, porque un PDF con la interfaz de
    la herramienta encima se lee como una captura de pantalla y no como un
    documento que alguien va a firmar. */
+/* ── capa de protección: bloqueo de segunda pestaña y avisos de rescate ── */
+#capaBloqueo,#capaAviso{position:fixed;inset:0;z-index:9999;display:none;
+  align-items:center;justify-content:center;background:rgba(15,23,32,.72);padding:24px}
+#capaBloqueo.ver,#capaAviso.ver{display:flex}
+#capaBloqueo .cuadro,#capaAviso .cuadro{background:#fff;border-radius:12px;max-width:560px;
+  padding:26px 28px;box-shadow:0 18px 50px rgba(0,0,0,.28);line-height:1.5}
+#capaBloqueo h2,#capaAviso h2{margin:0 0 10px;font-size:19px;color:#1F4E79}
+#capaAviso h2{color:#9B4A2F}
+#capaBloqueo p,#capaAviso p{margin:0 0 12px;color:#1F2933;font-size:14px}
+#capaBloqueo .btns,#capaAviso .btns{display:flex;gap:10px;justify-content:flex-end;margin-top:18px}
+/* los .btn del encabezado son claros sobre fondo oscuro; dentro del cuadro
+   blanco hay que devolverles el contraste a mano */
+#capaBloqueo .btns .btn,#capaAviso .btns .btn{background:#1F4E79;border:1px solid #1F4E79;
+  color:#fff;padding:8px 16px;border-radius:7px;font-size:13px;cursor:pointer}
+#capaBloqueo .btns .btn.ghost,#capaAviso .btns .btn.ghost{background:#fff;border:1px solid #DDE3E9;color:#5B6B7B}
+#capaBloqueo .btns .btn:hover,#capaAviso .btns .btn:hover{opacity:.9}
 #hojaImpresion{display:none}
 @media print{
   @page{size:A4 landscape;margin:12mm 10mm}
   header,nav.tabs,.acciones,.wrap{display:none !important}
+  #capaBloqueo,#capaAviso{display:none !important}
   #hojaImpresion{display:block !important}
   body{background:#fff;color:#000;font-size:10px}
   .pr-cab{margin-bottom:10px}
@@ -207,6 +282,23 @@ th[title]:hover .i, td[title]:hover .i, div[title]:hover .i{opacity:1}
 </style>
 </head>
 <body>
+<div id="capaBloqueo">
+  <div class="cuadro">
+    <h2>La calculadora ya está abierta</h2>
+    <p id="bloqueoTexto"></p>
+    <div class="btns">
+      <button class="btn ghost" id="bloqueoIgual">Abrir de todos modos</button>
+      <button class="btn" id="bloqueoReintentar">Ya la cerré, reintentar</button>
+    </div>
+  </div>
+</div>
+<div id="capaAviso">
+  <div class="cuadro">
+    <h2 id="avisoTitulo"></h2>
+    <p id="avisoCuerpo"></p>
+    <div class="btns"><button class="btn" id="avisoCerrar">Entendido</button></div>
+  </div>
+</div>
 <header>
 <div class="wrap">
   <div class="hrow">
@@ -224,6 +316,7 @@ th[title]:hover .i, td[title]:hover .i, div[title]:hover .i{opacity:1}
       <button class="btn ghost" id="btnDescargar">Descargar</button>
       <button class="btn ghost" id="btnCargar">Cargar copia</button>
       <button class="btn ghost" id="btnCopiar">Copiar</button>
+      <button class="btn ghost" id="btnRespaldos" title="Últimas versiones guardadas antes de escribir el archivo">Respaldos</button>
       <button class="btn ghost" id="btnReiniciar">Reiniciar</button>
       <input type="file" id="fileInput" accept=".json,application/json" class="hidden">
     </div>
@@ -237,9 +330,10 @@ th[title]:hover .i, td[title]:hover .i, div[title]:hover .i{opacity:1}
     <button data-t="actividades"><span class="n">5</span>Actividades</button>
     <button data-t="ratios"><span class="n">6</span>Ratios por cargo</button>
     <button data-t="biblioteca"><span class="n">7</span>Biblioteca de ratios</button>
-    <button data-t="resultados"><span class="n">8</span>Resultados</button>
-    <button data-t="oportunidades"><span class="n">9</span>Oportunidades</button>
-    <button data-t="metodologia"><span class="n">10</span>Metodología</button>
+    <button data-t="tablero"><span class="n">8</span>Tablero</button>
+    <button data-t="resultados"><span class="n">9</span>Resultados</button>
+    <button data-t="oportunidades"><span class="n">10</span>Oportunidades</button>
+    <button data-t="metodologia"><span class="n">11</span>Metodología</button>
   </nav>
 </div>
 </header>
@@ -735,6 +829,87 @@ th[title]:hover .i, td[title]:hover .i, div[title]:hover .i{opacity:1}
 </section>
 
 <!-- ============================ 8 · RESULTADOS ============================ -->
+
+<!-- ============================ 8 · TABLERO ============================ -->
+<section class="panel" data-p="tablero">
+  <div id="tbAvisoVacio"></div>
+
+  <div class="card">
+    <h2>Filtros</h2>
+    <div class="desc">Todo el tablero responde a esta selección. También puedes filtrar haciendo clic sobre cualquier barra, porción o renglón: clic para elegir, otra vez para soltar, y <b>Ctrl+clic</b> para sumar varios.</div>
+    <div class="pgrid" style="margin-bottom:12px">
+      <div class="pcampo"><label>Cargo</label><select id="tbCargoSel"></select>
+        <div class="hint">Acota el tablero a un cargo. Con «todos» puedes comparar varios haciendo clic en las fichas de abajo.</div></div>
+    </div>
+    <div id="tbCargosBloque">
+      <div style="font-size:11px;color:var(--gris);margin-bottom:6px">Comparar cargos</div>
+      <div class="tb-slic" id="tbCargos"></div>
+    </div>
+    <div style="font-size:11px;color:var(--gris);margin:12px 0 6px">Dotación — cada grupo que atiende cada cargo, por separado
+      <span style="opacity:.8">(el fisioterapeuta de San Antonio no es el mismo que el de formativas)</span></div>
+    <div class="tb-slic tb-slic-alto" id="tbAsigs"></div>
+    <div class="tb-act" id="tbActivos"></div>
+  </div>
+
+  <div class="card">
+    <div class="kpis">
+      <div class="kpi" title="Horas que suma el inventario filtrado en un mes tipo. No es la capacidad de nadie: es el trabajo declarado."><div class="v" id="tb-hmes">0</div><div class="l">Horas al mes</div></div>
+      <div class="kpi" title="Las mismas horas repartidas en la convención de semanas por mes del estudio."><div class="v" id="tb-hsem">0</div><div class="l" id="tb-lsem">Horas a la semana</div></div>
+      <div class="kpi" title="Horas demandadas dividido entre las horas efectivas de una persona. Cuántas personas a tiempo completo equivale lo que está a la vista."><div class="v" id="tb-fte">0</div><div class="l">Personas equivalentes (FTE)</div></div>
+      <div class="kpi" id="tb-kratio" title="Jugadores atendidos por cada persona declarada hoy, contra el ratio de referencia del cargo. Solo tiene sentido con un cargo elegido."><div class="v" id="tb-ratio">—</div><div class="l" id="tb-lratio">Ratio real de atención</div></div>
+      <div class="kpi" id="tb-kavance" title="Cargos del estudio que ya tienen actividades registradas, y qué parte de la plantilla declarada representan. Mientras esto no esté completo, cualquier total del estudio es parcial."><div class="v" id="tb-avance">—</div><div class="l" id="tb-lavance">Avance del levantamiento</div></div>
+    </div>
+    <div id="tbAvisoAvance"></div>
+  </div>
+
+  <div class="tb-grid">
+    <div class="card tb-vis">
+      <h3>Naturaleza del tiempo</h3>
+      <div class="sub">Con la misma nomenclatura que usas al clasificar cada actividad. Clic en una porción para filtrar.</div>
+      <div class="tb-slic" style="margin-bottom:12px">
+        <button class="tb-chip" data-tbdonut="bloque">Por bloque</button>
+        <button class="tb-chip" data-tbdonut="nat">Por naturaleza</button>
+      </div>
+      <div id="tbDonut"></div>
+      <div class="tb-leg" id="tbDonutLeg"></div>
+    </div>
+    <div class="card tb-vis">
+      <h3>Horas por naturaleza</h3>
+      <div class="sub">El detalle de los nueve tipos de tiempo, de mayor a menor.</div>
+      <div class="tb-bars" id="tbNat"></div>
+    </div>
+  </div>
+
+  <div class="tb-grid">
+    <div class="card tb-vis">
+      <h3>Horas por grupo de categorías</h3>
+      <div class="sub">Dónde caen las horas: qué pesa Primera, qué pesan las formativas, qué es transversal al cargo.</div>
+      <div class="tb-bars" id="tbGrupo"></div>
+    </div>
+    <div class="card tb-vis">
+      <h3>Horas por tipo de actividad</h3>
+      <div class="sub">Qué parte de la carga escala con el plantel y qué parte es fija. Es el sustento de cualquier proyección de crecimiento.</div>
+      <div class="tb-bars" id="tbTipo"></div>
+      <div id="tbNotaTipo"></div>
+    </div>
+  </div>
+
+  <div class="card tb-vis">
+    <h3>Las actividades que explican la carga</h3>
+    <div class="sub">Barras de horas al mes, de mayor a menor, y encima la curva del acumulado, medida contra el total de lo filtrado. El color de cada barra es su bloque de naturaleza. Clic en una columna para aislar esa actividad.</div>
+    <div style="overflow-x:auto" id="tbPareto"></div>
+  </div>
+
+  <div class="card tb-vis">
+    <h3>Inventario a la vista</h3>
+    <div class="sub">Todas las actividades que pasan los filtros, con sus horas semanales estimadas.</div>
+    <div class="tabla-scroll" style="max-height:560px;overflow-y:auto"><table><thead><tr>
+      <th>Cargo</th><th>Grupo</th><th>Actividad</th><th>Naturaleza</th><th>Tipo</th>
+      <th class="num">Horas mes</th><th class="num">Horas semana</th>
+    </tr></thead><tbody id="tbTabla"></tbody><tfoot id="tbTablaPie"></tfoot></table></div>
+  </div>
+</section>
+
 <section class="panel" data-p="resultados">
   <div id="bannerParcialRes"></div>
   <div class="card">
@@ -1371,9 +1546,78 @@ function pintarReloj(){
     (enArchivo? "en el archivo <span class='mono'>"+esc(fileHandle?fileHandle.name:"")+"</span>." : "solo en la memoria de este navegador.");
 }
 setInterval(pintarReloj, 15000);
+/* ── avisos de protección ──────────────────────────────────────────────
+   Un alert() del navegador se cierra con Enter sin leerlo. Lo que evita que
+   se pierda un levantamiento se muestra en una capa que hay que cerrar a
+   propósito. */
+function avisoProteccion(titulo, html){
+  const c=$("#capaAviso"); if(!c){ alert(titulo); return; }
+  $("#avisoTitulo").innerHTML=titulo;
+  $("#avisoCuerpo").innerHTML=html;
+  c.classList.add("ver");
+}
+
+/* ── respaldo rotativo ────────────────────────────────────────────────
+   Antes de cada escritura al archivo se conservan las tres últimas versiones
+   en IndexedDB. Es el «deshacer» que faltaba: si una escritura sale mal, el
+   contenido anterior sigue estando a un clic. */
+async function respaldar(){
+  if(estadoVacio()) return;
+  try{
+    const db=await idb();
+    const lista = await new Promise(res=>{ const t=db.transaction("h","readonly");
+      const q=t.objectStore("h").get("respaldos"); q.onsuccess=()=>res(q.result||[]); q.onerror=()=>res([]); });
+    const txt = JSON.stringify(S);
+    /* La marca de hora cambia en cada guardado, así que se compara el contenido
+       sin ella: guardar dos veces lo mismo no debe gastar una ranura. */
+    const clave = JSON.stringify(Object.assign({}, S, {meta:Object.assign({}, S.meta, {guardadoEn:""})}));
+    if(lista[0] && lista[0].clave===clave) return;
+    lista.unshift({ts:Date.now(), resumen:resumenLev(S), clave, txt});
+    while(lista.length>3) lista.pop();
+    await new Promise(res=>{ const t=db.transaction("h","readwrite");
+      t.objectStore("h").put(lista,"respaldos"); t.oncomplete=res; t.onerror=res; });
+  }catch(e){ /* el respaldo nunca debe impedir guardar */ }
+}
+async function leerRespaldos(){
+  try{
+    const db=await idb();
+    return await new Promise(res=>{ const t=db.transaction("h","readonly");
+      const q=t.objectStore("h").get("respaldos"); q.onsuccess=()=>res(q.result||[]); q.onerror=()=>res([]); });
+  }catch(e){ return []; }
+}
+
+const vacioDe = d => !(d && ((d.sedes||[]).length || (d.categorias||[]).length ||
+                             (d.asignaciones||[]).length || (d.actividades||[]).length));
+
 async function guardarArchivo(){
   if(!fileHandle) return false;
+  /* GUARDA 2 — no escribir vacío sobre un archivo con contenido.
+     Si el localStorage se pierde (basta abrir el HTML desde otra ruta), la
+     pantalla arranca en blanco; con el archivo aún vinculado, el primer
+     autoguardado lo borraba. Antes de escribir un estado vacío se lee el
+     archivo: si tiene levantamiento, no se escribe y se desvincula. */
+  if(estadoVacio()){
+    let d=null, fallo=false;
+    try{ d=await leerJSONde(fileHandle); }catch(e){ fallo=true; }
+    if(fallo){
+      avisoProteccion("No se escribió el archivo",
+        "No se pudo leer <b>"+esc(fileHandle.name)+"</b> y en pantalla no hay levantamiento, "+
+        "así que no se escribió nada. El archivo quedó intacto.");
+      return false;
+    }
+    if(!vacioDe(d)){
+      const nom=fileHandle.name;
+      fileHandle=null; olvidarHandle();
+      avisoProteccion("Se protegió tu archivo",
+        "<b>"+esc(nom)+"</b> contiene "+resumenLev(d)+" y esta pantalla está vacía. "+
+        "No se escribió nada y se desvinculó el archivo.<br><br>"+
+        "Abre el archivo con <b>Abrir y vincular archivo</b> para seguir trabajando sobre él.");
+      marcar("Archivo protegido — desvinculado","warn"); render();
+      return false;
+    }
+  }
   try{
+    await respaldar();
     sellarFecha();
     const w = await fileHandle.createWritable();
     await w.write(JSON.stringify(S,null,2));
@@ -3328,6 +3572,409 @@ function refrescarUnidadVisita(){
     se hace un viaje en vez de dos, pero se siguen cubriendo los dos partidos. Solo el transporte, la concentración
     y el hotel deberían estar en esta lista.</div>`;
 }
+/* ==================== TABLERO ====================
+   Un tablero no es una colección de gráficos: es una sola pregunta mirada
+   desde varios ángulos. Por eso hay UN estado de filtro y todos los visuales
+   lo comparten, y por eso cada visual se dibuja con los filtros de los DEMÁS
+   aplicados pero no con el propio: al elegir «estructural», el gráfico de
+   naturalezas sigue mostrando las suyas con la elegida resaltada. Filtrar sin
+   perder el contexto es la diferencia entre un tablero y una lista de reportes.
+
+   La unidad de análisis no es el cargo sino la ASIGNACIÓN — el fisioterapeuta
+   de San Antonio y el de formativas son dos realidades distintas con el mismo
+   nombre de cargo, y sin poder separarlas el tablero promedia cosas que no se
+   parecen. Por eso el segmentador principal es la dotación, no el cargo. */
+const TB_DIMS = ["cargo","asig","bloque","nat","grupo","tipo","act"];
+function tbEstado(){
+  const u=S.ui;
+  if(!u.tb) u.tb={};
+  TB_DIMS.forEach(d=>{ if(!Array.isArray(u.tb[d])) u.tb[d]=[]; });
+  /* El alcance dejó de ser el área: casi todo el club es «Deportiva», así que
+     ese filtro no separaba nada. El cargo sí. */
+  if(u.tb.alcance==null) u.tb.alcance="";
+  delete u.tb.area;
+  if(u.tb.donut!=="nat") u.tb.donut="bloque";
+  delete u.tb.cob;
+  tbSanear(u.tb);
+  return u.tb;
+}
+/* Los filtros se guardan con el levantamiento, así que sobreviven a que el
+   estudio cambie debajo: si un cargo se saca con la casilla de Cargos, o se
+   borra una asignación o una actividad, el tablero se quedaba apuntando a algo
+   que ya no existe y aparecía en blanco sin decir por qué. Cada render
+   descarta las referencias muertas — es preferible perder el filtro a mostrar
+   un tablero vacío que parece un error de cálculo. */
+function tbSanear(t){
+  const vivos={}; S.cargos.filter(c=>c.analizar).forEach(c=>vivos[c.id]=1);
+  if(t.alcance && !vivos[t.alcance]) t.alcance="";
+  t.cargo = t.cargo.filter(id=>vivos[id]);
+  t.asig  = t.asig.filter(k=>{
+    const [cid,gid]=k.split("|");
+    if(!vivos[cid]) return false;
+    return !gid || S.asignaciones.some(a=>a.id===gid);
+  });
+  t.act   = t.act.filter(id=>S.actividades.some(a=>a.id===id && vivos[a.cargoId]));
+}
+const TB_COLOR = {directo:"#1F4E79", tecnico:"#C68A00", estructural:"#B04A2B", "":"#9AA7B4"};
+const tbColor = k => TB_COLOR[k] !== undefined ? TB_COLOR[k] : "#9AA7B4";
+/* Dentro de un bloque las naturalezas se distinguen por claridad, no por
+   color nuevo: así la porción sigue diciendo a qué bloque pertenece. */
+const TB_TINTE = ["", "22", "44"];
+function tbColorNat(k){
+  const b=natBloque(k)||"", base=tbColor(b);
+  const hs=NATS.filter(x=>x[2]===b).map(x=>x[0]);
+  const i=Math.max(0, hs.indexOf(k));
+  return base + (TB_TINTE[i] ? "" : "");
+}
+function tbAclara(hex, paso){
+  const n0=parseInt(hex.slice(1),16);
+  const r=(n0>>16)&255, g=(n0>>8)&255, b=n0&255, f=paso*0.18;
+  const m=v=>Math.round(v+(255-v)*f);
+  return "#"+((1<<24)+(m(r)<<16)+(m(g)<<8)+m(b)).toString(16).slice(1);
+}
+
+function tbCargos(){ return S.cargos.filter(c=>c.analizar); }
+function tbTieneInventario(c){ return S.actividades.some(a=>a.cargoId===c.id && actIncluida(a)); }
+function tbCargosVisibles(){
+  const f=tbEstado();
+  return tbCargos().filter(c=>!f.alcance || c.id===f.alcance);
+}
+/* La clave de una dotación: cargo + grupo. Las actividades comunes al cargo
+   entran con grupo vacío y se etiquetan como tales. */
+const tbClaveAsig = (cargoId, grupoId) => cargoId+"|"+(grupoId||"");
+function tbEtiquetaAsig(cargoId, grupoId){
+  const c=S.cargos.find(x=>x.id===cargoId);
+  const nom=c?c.nombre:"?";
+  if(!grupoId) return nom+" · común al cargo";
+  const asg=S.asignaciones.find(x=>x.id===grupoId);
+  const cats=c?catsDeGrupo(c,grupoId).map(x=>x.nombre):[];
+  const et=(asg&&asg.nota) ? asg.nota : (cats.length?cats.join(", "):"sin categorías activas");
+  return nom+" · "+et;
+}
+function tbFilas(){
+  const vis=tbCargosVisibles(), out=[];
+  vis.forEach(c=>{
+    S.actividades.filter(a=>a.cargoId===c.id && actIncluida(a)).forEach(a=>{
+      /* La etiqueta de pantalla se recorta («Sub-19, Sub-17 +2»), y en un
+         tablero eso junta grupos distintos y separa iguales. La clave del
+         gráfico de grupos es la lista completa de categorías activas, para que
+         las horas de un mismo plantel sumen entre todos los cargos que lo
+         atienden. */
+      const cats=catsDeGrupo(c, a.grupoId||"").map(x=>x.nombre);
+      out.push({c, a,
+        h: horasActividad(a,c),
+        nat: a.nat||"",
+        bloque: a.nat ? natBloque(a.nat) : "",
+        asig: tbClaveAsig(c.id, a.grupoId||""),
+        /* Dos asignaciones pueden cubrir la misma categoría con propósitos
+           distintos —Primera y Rehabilitador—, y en la tabla tienen que poder
+           distinguirse aunque en el gráfico de grupos sumen juntas. */
+        dot: a.grupoId ? ((S.asignaciones.find(x=>x.id===a.grupoId)||{}).nota || (cats.length?cats.join(", "):"sin categorías")) : "Común al cargo",
+        grupo: a.grupoId ? (cats.length ? cats.join(", ") : "Grupo sin categorías activas") : "Común al cargo",
+        tipo: a.tipo||"fijo"});
+    });
+  });
+  return out;
+}
+function tbPasa(r, excepto){
+  const f=tbEstado();
+  if(excepto!=="cargo"  && f.cargo.length  && f.cargo.indexOf(r.c.id)<0)   return false;
+  if(excepto!=="asig"   && f.asig.length   && f.asig.indexOf(r.asig)<0)    return false;
+  if(excepto!=="bloque" && f.bloque.length && f.bloque.indexOf(r.bloque)<0)return false;
+  if(excepto!=="nat"    && f.nat.length    && f.nat.indexOf(r.nat)<0)      return false;
+  if(excepto!=="grupo"  && f.grupo.length  && f.grupo.indexOf(r.grupo)<0)  return false;
+  if(excepto!=="tipo"   && f.tipo.length   && f.tipo.indexOf(r.tipo)<0)    return false;
+  if(excepto!=="act"    && f.act.length    && f.act.indexOf(r.a.id)<0)     return false;
+  return true;
+}
+function tbToggle(dim, val, aditivo){
+  const f=tbEstado(), arr=f[dim], i=arr.indexOf(val);
+  if(aditivo){ if(i<0) arr.push(val); else arr.splice(i,1); }
+  else if(i>=0 && arr.length===1) f[dim]=[];
+  else f[dim]=[val];
+  /* Elegir un cargo distinto deja sin sentido las dotaciones ya elegidas. */
+  if(dim==="cargo") f.asig=f.asig.filter(k=>f.cargo.length===0 || f.cargo.indexOf(k.split("|")[0])>=0);
+  tocar(); renderTablero();
+}
+function tbLimpiar(){ const f=tbEstado(); TB_DIMS.forEach(d=>f[d]=[]); tocar(); renderTablero(); }
+const tbSel = (dim,val) => tbEstado()[dim].indexOf(val)>=0;
+const tbHaySel = dim => tbEstado()[dim].length>0;
+
+/* ---------- piezas de dibujo ---------- */
+/* Barras en HTML y no en SVG: heredan el tema, se adaptan al ancho sin
+   recalcular nada y se pueden hacer clic sin capas de eventos encima. */
+function tbBarras(cont, dim, items, color){
+  const el=$(cont); if(!el) return;
+  if(!items.length){ el.innerHTML=`<div class="tb-vacio">No hay horas que mostrar con los filtros actuales.</div>`; return; }
+  const max=items.reduce((m,x)=>Math.max(m,x.h),0)||1;
+  const tot=items.reduce((s,x)=>s+x.h,0)||1;
+  const hay=tbHaySel(dim);
+  el.innerHTML=items.map(x=>{
+    const on = !hay || tbSel(dim,x.k);
+    return `<div class="tb-b${on?"":" off"}" data-tbdim="${dim}" data-tbval="${esc(x.k)}" title="${esc(x.t||x.nombre)}">
+      <div><div class="lab">${esc(x.nombre)}</div>
+        <div class="track"><div class="fill" style="width:${(x.h/max*100).toFixed(1)}%;background:${color?color(x):"var(--azul2)"}"></div></div></div>
+      <div class="val">${mh(x.h)}<span>${f1(x.h/tot*100)}%</span></div></div>`;
+  }).join("");
+}
+/* La dona se dibuja a mano: unas pocas porciones no justifican una librería, y
+   una externa rompería el archivo el día que se abra sin internet. */
+function tbDona(cont, leg, items, dim){
+  const el=$(cont), lg=$(leg); if(!el) return;
+  const tot=items.reduce((s,x)=>s+x.h,0);
+  if(tot<=0){ el.innerHTML=`<div class="tb-vacio">Sin horas que repartir.</div>`; if(lg) lg.innerHTML=""; return; }
+  const R=78, r=48, cx=95, cy=95;
+  let a0=-Math.PI/2, paths="";
+  const hay=tbHaySel(dim);
+  items.forEach(x=>{
+    const ang=x.h/tot*Math.PI*2, a1=a0+ang;
+    const cls=(!hay||tbSel(dim,x.k))?"":"off";
+    /* Una sola porción que ocupa el total no se puede dibujar como arco: el
+       punto inicial y el final coinciden. Se dibuja como anillo completo. */
+    if(ang>=Math.PI*2-1e-6){
+      paths+=`<path d="M ${cx} ${cy-R} A ${R} ${R} 0 1 1 ${cx-0.01} ${cy-R} Z M ${cx} ${cy-r} A ${r} ${r} 0 1 0 ${cx-0.01} ${cy-r} Z"
+        fill="${x.color}" fill-rule="evenodd" class="${cls}" data-tbdim="${dim}" data-tbval="${esc(x.k)}"><title>${esc(x.nombre)}: ${mh(x.h)} h</title></path>`;
+    } else {
+      const g=ang>Math.PI?1:0;
+      const p=(rad,a)=>`${(cx+rad*Math.cos(a)).toFixed(2)} ${(cy+rad*Math.sin(a)).toFixed(2)}`;
+      paths+=`<path d="M ${p(R,a0)} A ${R} ${R} 0 ${g} 1 ${p(R,a1)} L ${p(r,a1)} A ${r} ${r} 0 ${g} 0 ${p(r,a0)} Z"
+        fill="${x.color}" class="${cls}" data-tbdim="${dim}" data-tbval="${esc(x.k)}"><title>${esc(x.nombre)}: ${mh(x.h)} h</title></path>`;
+    }
+    a0=a1;
+  });
+  el.innerHTML=`<svg class="tb-donut" viewBox="0 0 190 190" width="190" height="190" role="img"
+    aria-label="Reparto de las horas declaradas según la naturaleza del tiempo">${paths}
+    <text x="95" y="90" text-anchor="middle" font-size="21" font-weight="700" fill="#1F4E79">${mh(tot)}</text>
+    <text x="95" y="105" text-anchor="middle" font-size="9.5" fill="#5B6B7B">horas al mes</text></svg>`;
+  if(lg) lg.innerHTML=items.map(x=>{
+    const on=!hay||tbSel(dim,x.k);
+    return `<div class="${on?"":"off"}" data-tbdim="${dim}" data-tbval="${esc(x.k)}" title="${esc(x.t||"")}">
+      <i style="background:${x.color}"></i>${esc(x.nombre)} <b>${f1(x.h/tot*100)}%</b></div>`;
+  }).join("");
+}
+/* ---------- Pareto ----------
+   El Pareto es un gráfico, no una tabla: lo que se lee de un vistazo es dónde
+   se aplana la curva acumulada, y eso una columna de porcentajes no lo dice.
+   Barras por actividad de mayor a menor, con la curva del acumulado encima y
+   la referencia del 80% marcada. */
+function tbPareto(cont, rows, sm){
+  const el=$(cont); if(!el) return;
+  const orden=rows.slice().sort((a,b)=>b.h-a.h).filter(r=>r.h>0);
+  if(!orden.length){ el.innerHTML=`<div class="tb-vacio">No hay actividades con los filtros actuales.</div>`; return; }
+  const N=Math.min(25, orden.length);
+  const vis=orden.slice(0,N);
+  const totTodo=orden.reduce((s,r)=>s+r.h,0);
+  const max=vis[0].h;
+  const W=Math.max(620, N*54), H=330, ML=50, MR=44, MT=14, MB=142;
+  const pw=W-ML-MR, ph=H-MT-MB, bw=pw/N;
+  const hay=tbHaySel("act");
+  let barras="", marcas="", pts=[], acum=0, acumVis=0;
+  vis.forEach((r,i)=>{
+    acum+=r.h; acumVis=acum;
+    const x=ML+i*bw, h=r.h/max*ph, y=MT+ph-h;
+    const on=!hay||tbSel("act",r.a.id);
+    barras+=`<rect x="${(x+bw*0.14).toFixed(1)}" y="${y.toFixed(1)}" width="${(bw*0.72).toFixed(1)}" height="${Math.max(1,h).toFixed(1)}"
+      fill="${tbColor(r.bloque)}" class="${on?"":"off"}" data-tbdim="act" data-tbval="${r.a.id}" rx="2">
+      <title>${esc(r.a.nombre)} — ${esc(r.c.nombre)}&#10;${mh(r.h)} h/mes · ${mh(r.h/sm)} h/semana · ${f1(r.h/totTodo*100)}% del total&#10;Acumulado hasta aquí: ${f1(acum/totTodo*100)}%</title></rect>`;
+    pts.push([x+bw/2, MT+ph-(acum/totTodo)*ph]);
+    const et=r.a.nombre.length>30?r.a.nombre.slice(0,29)+"…":r.a.nombre;
+    const cx=(x+bw/2).toFixed(1), cy=(MT+ph+9).toFixed(1);
+    marcas+=`<text x="${cx}" y="${cy}" font-size="8.5" fill="#5B6B7B"
+      transform="rotate(-40 ${cx} ${cy})" text-anchor="end">${esc(et)}</text>`;
+  });
+  const linea=pts.map((p,i)=>(i?"L":"M")+p[0].toFixed(1)+" "+p[1].toFixed(1)).join(" ");
+  const puntos=pts.map(p=>`<circle cx="${p[0].toFixed(1)}" cy="${p[1].toFixed(1)}" r="2.6" fill="#B04A2B"/>`).join("");
+  const ejeY=[0,0.25,0.5,0.75,1].map(v=>{
+    const y=MT+ph-v*ph;
+    return `<line x1="${ML}" y1="${y.toFixed(1)}" x2="${W-MR}" y2="${y.toFixed(1)}" stroke="#EDF1F5"/>
+      <text x="${ML-6}" y="${(y+3).toFixed(1)}" font-size="9" fill="#5B6B7B" text-anchor="end">${mh(max*v)}</text>
+      <text x="${W-MR+6}" y="${(y+3).toFixed(1)}" font-size="9" fill="#B04A2B">${Math.round(v*100)}%</text>`;
+  }).join("");
+  /* La curva se mide contra el total de TODAS las actividades filtradas, no
+     contra las que caben en el gráfico: si las 25 mayores explican el 30%, eso
+     es un hallazgo —la carga está repartida y no hay un puñado de renglones
+     que la expliquen— y esconderlo reescalando al subconjunto sería dibujar
+     una concentración que no existe. */
+  const pctVis=acumVis/totTodo*100;
+  const dicho = pctVis>=70
+    ? `Las ${N} mayores explican el <b>${f1(pctVis)}%</b> de las horas: la carga está concentrada y estos renglones son la conversación.`
+    : `Las ${N} mayores explican solo el <b>${f1(pctVis)}%</b> de ${orden.length} actividades: la carga está repartida, no concentrada. Recortar renglones sueltos no va a mover el requerimiento — hay que mirar frecuencias y alcance.`;
+  el.innerHTML=`<svg viewBox="0 0 ${W} ${H}" width="100%" style="max-width:${W}px;height:auto;display:block" role="img"
+      aria-label="Pareto de actividades: barras de horas al mes y curva de porcentaje acumulado">
+    ${ejeY}${barras}
+    <path d="${linea}" fill="none" stroke="#B04A2B" stroke-width="1.8"/>
+    ${puntos}${marcas}
+  </svg>
+  <div style="font-size:11.5px;color:var(--gris);margin-top:6px;line-height:1.4">${dicho}</div>`;
+}
+
+/* ---------- el render ---------- */
+function renderTablero(){
+  if(!$("#tbCargos")) return;
+  const f=tbEstado(), filas=tbFilas(), sm=semanasMes(), he=horasEfectivas();
+
+  /* La lista se ordena por área y dentro de ella por nombre, y cada opción
+     dice cuántas horas tiene levantadas: así se ve de una qué está completo. */
+  const sel=$("#tbCargoSel");
+  if(sel){
+    const hTodo={};
+    S.cargos.filter(c=>c.analizar).forEach(c=>{
+      hTodo[c.id]=S.actividades.filter(a=>a.cargoId===c.id && actIncluida(a))
+        .reduce((s,a)=>s+horasActividad(a,c),0);
+    });
+    const lista=tbCargos().slice().sort((a,b)=>
+      (a.area||"").localeCompare(b.area||"") || a.nombre.localeCompare(b.nombre));
+    sel.innerHTML=`<option value="">Todos los cargos del estudio (${lista.length})</option>`+
+      lista.map(c=>`<option value="${c.id}" ${f.alcance===c.id?"selected":""}>${esc(c.nombre)} · ${esc(c.area||"sin área")} — ${hTodo[c.id]>0?mh(hTodo[c.id])+" h/mes":"sin inventario"}</option>`).join("");
+  }
+
+  /* --- segmentador de cargos: solo tiene sentido con el alcance abierto --- */
+  const vis=tbCargosVisibles();
+  const blq=$("#tbCargosBloque"); if(blq) blq.hidden = !!f.alcance;
+  const hCargo={}; filas.forEach(r=>{ if(tbPasa(r,"cargo")) hCargo[r.c.id]=(hCargo[r.c.id]||0)+r.h; });
+  $("#tbCargos").innerHTML = vis.length
+    ? vis.map(c=>`<button class="tb-chip${tbSel("cargo",c.id)?" on":""}" data-tbdim="cargo" data-tbval="${c.id}"
+        title="${esc(c.nombre)} · ${tbTieneInventario(c)?mh(hCargo[c.id]||0)+" h/mes a la vista":"sin actividades registradas"}">${esc(c.nombre)}<span class="c">${tbTieneInventario(c)?mh(hCargo[c.id]||0):"—"}</span></button>`).join("")
+    : `<div class="tb-vacio" style="text-align:left">Ningún cargo en esta área.</div>`;
+
+  /* --- segmentador de dotación: el nivel donde de verdad se decide --- */
+  const hAsig={}, ordenAsig=[];
+  filas.forEach(r=>{ if(tbPasa(r,"asig")){ if(hAsig[r.asig]===undefined) ordenAsig.push(r.asig); hAsig[r.asig]=(hAsig[r.asig]||0)+r.h; } });
+  ordenAsig.sort((a,b)=>hAsig[b]-hAsig[a]);
+  $("#tbAsigs").innerHTML = ordenAsig.length
+    ? ordenAsig.map(k=>{
+        const asg=S.asignaciones.find(x=>x.id===k.split("|")[1]);
+        const per=asg?n(asg.personas):0;
+        return `<button class="tb-chip${tbSel("asig",k)?" on":""}" data-tbdim="asig" data-tbval="${esc(k)}"
+          title="${esc(tbEtiquetaAsig(k.split("|")[0], k.split("|")[1]))}${per?" · "+f1(per)+" personas declaradas":""}">${esc(tbEtiquetaAsig(k.split("|")[0], k.split("|")[1]))}<span class="c">${mh(hAsig[k])}</span></button>`;
+      }).join("")
+    : `<div class="tb-vacio" style="text-align:left">No hay dotaciones con actividades registradas en esta selección.</div>`;
+
+  /* --- qué filtros están puestos --- */
+  const et={cargo:"Cargo",asig:"Dotación",bloque:"Bloque",nat:"Naturaleza",grupo:"Grupo",tipo:"Tipo",act:"Actividad"};
+  const nombreVal=(d,v)=> d==="cargo" ? ((S.cargos.find(c=>c.id===v)||{}).nombre||"?")
+    : d==="asig" ? tbEtiquetaAsig(v.split("|")[0], v.split("|")[1])
+    : d==="bloque" ? (v?bloqueNombre(v):"Sin clasificar")
+    : d==="nat" ? (v?natNombre(v):"Sin clasificar")
+    : d==="act" ? ((S.actividades.find(a=>a.id===v)||{}).nombre||"?")
+    : d==="tipo" ? (TIPOS_ACT[v]||v).replace(/^\d+ · /,"") : v;
+  let chips="";
+  TB_DIMS.forEach(d=>f[d].forEach(v=>{
+    chips+=`<button class="f" data-tbdim="${d}" data-tbval="${esc(v)}" title="Quitar este filtro">${et[d]}: ${esc(nombreVal(d,v))} ✕</button>`;
+  }));
+  $("#tbActivos").innerHTML = chips
+    ? `<span class="et">Filtros activos:</span>${chips}<button class="btn mini" id="tbLimpiar">Limpiar todo</button>`
+    : `<span class="et">Sin filtros de gráfico. Haz clic en cualquier barra, porción o columna para empezar a explorar.</span>`;
+
+  /* --- tarjetas --- */
+  const act=filas.filter(r=>tbPasa(r));
+  const tot=act.reduce((s,r)=>s+r.h,0);
+  $("#tb-hmes").textContent=mh(tot);
+  $("#tb-hsem").textContent=mh(tot/sm);
+  $("#tb-lsem").textContent=`Horas a la semana (mes de ${nEv(sm)})`;
+  $("#tb-fte").textContent=f2(tot/he);
+
+  /* El ratio solo se lee con un cargo: mezclarlos da un promedio que no
+     corresponde a ninguna realidad. */
+  const kr=$("#tb-kratio");
+  const idsCargo = f.cargo.length ? f.cargo : [...new Set(f.asig.map(k=>k.split("|")[0]))];
+  const unico = idsCargo.length===1 ? S.cargos.find(c=>c.id===idsCargo[0]) : (vis.length===1?vis[0]:null);
+  if(unico){
+    const ra=ratioActual(unico);
+    const r=S.ratios.find(x=>x.id===unico.ratioSugeridoId);
+    const ref=(r && r.base==="jugadores") ? n(r.unidades) : null;
+    const baseNom = r ? ((BASES.find(x=>x[0]===r.base)||["",r.base])[1]).toLowerCase() : "";
+    const pie = ref ? `referencia ${f1(ref)} — ${ra>ref?"<b>por encima</b>":"dentro"} de la norma`
+      : r ? `la referencia de este cargo se mide por ${esc(baseNom)}, no por jugadores`
+          : `sin ratio de referencia elegido`;
+    $("#tb-ratio").textContent = ra==null ? "—" : f1(ra);
+    $("#tb-lratio").innerHTML = ra==null
+      ? `Ratio real · ${esc(unico.nombre)}<br><span style="opacity:.8">sin personas o sin jugadores declarados</span>`
+      : `Jugadores por persona · ${esc(unico.nombre)}<br><span style="opacity:.8">${pie}</span>`;
+    kr.classList.toggle("alerta", !!(ra!=null && ref && ra>ref));
+  } else {
+    $("#tb-ratio").textContent="—";
+    $("#tb-lratio").innerHTML=`Ratio real de atención<br><span style="opacity:.8">elige un cargo para leerlo</span>`;
+    kr.classList.remove("alerta");
+  }
+
+  /* --- avance del levantamiento: el guardián de todo lo demás --- */
+  const todos=tbCargos(), conInv=todos.filter(tbTieneInventario);
+  const pTodos=todos.reduce((s,c)=>s+personasDe(c.id),0);
+  const pInv=conInv.reduce((s,c)=>s+personasDe(c.id),0);
+  const pct = pTodos>0 ? pInv/pTodos*100 : 0;
+  $("#tb-avance").textContent=`${conInv.length}/${todos.length}`;
+  $("#tb-lavance").innerHTML=`Cargos con inventario<br><span style="opacity:.8">${f1(pct)}% de la plantilla declarada</span>`;
+  $("#tb-kavance").classList.toggle("alerta", conInv.length<todos.length);
+  const faltan=todos.filter(c=>!tbTieneInventario(c));
+  $("#tbAvisoAvance").innerHTML = faltan.length
+    ? `<div class="nota warn" style="margin-top:12px"><b>El levantamiento está incompleto: faltan ${faltan.length===1?"1 cargo":faltan.length+" cargos"}.</b>
+       ${faltan.map(c=>`${esc(c.nombre)} (${f1(personasDe(c.id))} personas)`).join(" · ")}.
+       Representan el <b>${f1(100-pct)}% de la plantilla declarada</b> y hoy suman cero horas, así que cualquier total de este
+       tablero es un piso, no el requerimiento del club.</div>`
+    : `<div class="nota" style="margin-top:12px">Los ${todos.length} cargos del estudio tienen inventario registrado: los totales ya son comparables contra la plantilla declarada.</div>`;
+
+  const agr=(rows,key)=>{ const m={}; rows.forEach(r=>{ const k=key(r); m[k]=(m[k]||0)+r.h; }); return m; };
+
+  /* --- dona: por bloque o por naturaleza, con la misma nomenclatura que se
+         usa al clasificar cada actividad --- */
+  const porNat = f.donut==="nat";
+  $$("[data-tbdonut]").forEach(b=>b.classList.toggle("on", b.dataset.tbdonut===f.donut));
+  const dimD = porNat ? "nat" : "bloque";
+  const mD=agr(filas.filter(r=>tbPasa(r,dimD)), r=>porNat?r.nat:r.bloque);
+  const itemsD = porNat
+    ? NATS.map((x,i)=>({k:x[0],nombre:x[1],t:bloqueNombre(x[2]),h:mD[x[0]]||0,
+                        color:tbAclara(tbColor(x[2]), NATS.filter(y=>y[2]===x[2]).findIndex(y=>y[0]===x[0]))}))
+        .concat(mD[""]?[{k:"",nombre:"Sin clasificar",t:"Actividades sin naturaleza asignada.",h:mD[""],color:"#9AA7B4"}]:[])
+        .filter(x=>x.h>0).sort((a,b)=>b.h-a.h)
+    : BLOQUES_NAT.map(b=>({k:b[0],nombre:b[1],t:b[2],h:mD[b[0]]||0,color:tbColor(b[0])}))
+        .concat(mD[""]?[{k:"",nombre:"Sin clasificar",t:"Actividades sin naturaleza asignada.",h:mD[""],color:"#9AA7B4"}]:[])
+        .filter(x=>x.h>0);
+  tbDona("#tbDonut","#tbDonutLeg",itemsD,dimD);
+
+  /* --- barras por naturaleza --- */
+  const mn=agr(filas.filter(r=>tbPasa(r,"nat")),r=>r.nat);
+  const itemsN=NATS.map(x=>({k:x[0],nombre:x[1],bloque:x[2],h:mn[x[0]]||0}))
+    .concat(mn[""]?[{k:"",nombre:"Sin clasificar",bloque:"",h:mn[""]}]:[])
+    .filter(x=>x.h>0).sort((a,b)=>b.h-a.h);
+  tbBarras("#tbNat","nat",itemsN,x=>tbColor(x.bloque));
+
+  /* --- barras por grupo --- */
+  const mg=agr(filas.filter(r=>tbPasa(r,"grupo")),r=>r.grupo);
+  const itemsG=Object.keys(mg).map(k=>({k,nombre:k,h:mg[k]})).filter(x=>x.h>0).sort((a,b)=>b.h-a.h);
+  tbBarras("#tbGrupo","grupo",itemsG);
+
+  /* --- barras por tipo --- */
+  const mt=agr(filas.filter(r=>tbPasa(r,"tipo")),r=>r.tipo);
+  const itemsT=Object.keys(TIPOS_ACT).map(k=>({k,nombre:(TIPOS_ACT[k]||k).replace(/^\d+ · /,""),h:mt[k]||0}))
+    .filter(x=>x.h>0).sort((a,b)=>b.h-a.h);
+  tbBarras("#tbTipo","tipo",itemsT);
+  const escalable=(mt.jugador||0)+(mt.categoria||0)+(mt.evento||0), fija=mt.fijo||0, totT=escalable+fija;
+  $("#tbNotaTipo").innerHTML = totT>0
+    ? `<div class="nota" style="margin-top:10px"><b>${f1(escalable/totT*100)}% de estas horas escala</b> con el plantel, las categorías o el calendario;
+       el <b>${f1(fija/totT*100)}%</b> es fijo y no crece aunque crezca el club. Es la proporción que sostiene cualquier proyección:
+       si el plantel sube un 30%, solo la primera parte sube con él.</div>` : "";
+
+  /* --- pareto --- */
+  tbPareto("#tbPareto", filas.filter(r=>tbPasa(r,"act")), sm);
+
+  /* --- tabla del inventario --- */
+  const orden=act.slice().sort((a,b)=>b.h-a.h);
+  $("#tbTabla").innerHTML = orden.length
+    ? orden.map(r=>`<tr data-tbdim="act" data-tbval="${r.a.id}">
+        <td>${esc(r.c.nombre)}</td><td>${esc(r.dot)}</td><td>${esc(r.a.nombre)}</td>
+        <td><span style="display:inline-block;width:9px;height:9px;border-radius:2px;background:${tbColor(r.bloque)};margin-right:5px"></span>${esc(r.nat?natNombre(r.nat):"Sin clasificar")}</td>
+        <td>${esc((TIPOS_ACT[r.tipo]||r.tipo).replace(/^\d+ · /,""))}</td>
+        <td class="num">${mh(r.h)}</td><td class="num">${mh(r.h/sm)}</td></tr>`).join("")
+    : `<tr><td colspan="7" class="tb-vacio">No hay actividades con los filtros actuales.</td></tr>`;
+  $("#tbTablaPie").innerHTML = orden.length
+    ? `<tr><td colspan="5"><b>${orden.length} actividades a la vista</b></td>
+       <td class="num"><b>${mh(tot)}</b></td><td class="num"><b>${mh(tot/sm)}</b></td></tr>` : "";
+
+  $("#tbAvisoVacio").innerHTML = filas.length ? "" :
+    `<div class="nota alto"><b>Todavía no hay actividades que mostrar.</b> Registra el inventario en la pestaña de Actividades, o suelta el filtro de área.</div>`;
+}
+
 function refrescarSigueEntreno(){
   const el=$("#avisoSigueEntreno"); if(!el) return;
   const huerf=gruposSinEngancheCedido();
@@ -3503,7 +4150,7 @@ function renderComposicion(cargo){
 
   $("#natHead").innerHTML=`<tr><th style="min-width:230px">Naturaleza</th>`+
     cols.map(c=>`<th class="num" style="min-width:105px">${esc(c.et)}</th>`).join("")+
-    `<th class="num">Horas / año</th><th class="num">FTE</th><th class="num">% del total</th></tr>`;
+    `<th class="num">Horas / mes</th><th class="num">FTE</th><th class="num">% del total</th></tr>`;
 
   const filas=[];
   BLOQUES_NAT.forEach(b=>{
@@ -4123,7 +4770,7 @@ function renderOportunidades(){
 function render(){
   renderInicio(); renderSedes(); renderCategorias(); renderCalendario(); renderCargos();
   renderDotacion(); renderActividades(); renderRatiosCargo(); renderBiblioteca(); renderResultados();
-  renderOportunidades();
+  renderOportunidades(); renderTablero();
 }
 function renderLigero(){
   $$("[data-par]").forEach(el=>{ if(el.dataset.par in S.par) setVal(el,S.par[el.dataset.par]); });
@@ -4141,6 +4788,7 @@ function renderLigero(){
   $("#k-campo").textContent=deCampo(catsAct());
   $("#k-sedes").textContent=S.sedes.length;
   renderCalendario(); renderResultados(); renderOportunidades(); refrescarPoblacion(); refrescarCeldas(); renderPieDot(); renderDotResumen(); renderAvance();
+  renderTablero();
   refrescarInactivas();
   refrescarHuerfanas(S.cargos.find(c=>c.id===S.ui.cargoDot));
   refrescarFallos(); refrescarAlcance(); renderPieDot(); refrescarImposibles(); refrescarCapacidad();
@@ -4197,6 +4845,7 @@ function aplicar(el,pesado){
   else if(el.dataset.parTxt!==undefined){ S.par[el.dataset.parTxt]=el.value; }
   else if(el.id==="selCargoAct"){ S.ui.cargoAct=el.value; S.ui.grupoAct="__todas"; }
   else if(el.id==="selGrupoAct"){ S.ui.grupoAct=el.value; }
+  else if(el.id==="tbCargoSel"){ const t=tbEstado(); t.alcance=el.value; t.cargo=[]; t.asig=[]; t.act=[]; }
   else if(el.id==="filtroTipoAct"){ S.ui.fTipo=el.value; }
   else if(el.id==="filtroCadaAct"){ S.ui.fCada=el.value; }
   else if(el.id==="filtroNatAct"){ S.ui.fNat=el.value; }
@@ -4385,6 +5034,20 @@ function aplicarOrden(clave, etiqueta){
   tocar(); render();
 }
 $("#imprimirRev").onclick=()=>imprimirRevision();
+/* ---- tablero: un solo manejador para todo lo que filtra ----
+   Los visuales se redibujan en cada render, así que enganchar el clic a cada
+   barra sería volver a enganchar cientos de nodos cada vez. Se delega una vez
+   en el documento y cada elemento declara qué dimensión y qué valor
+   representa. Ctrl o Cmd suman a la selección en lugar de reemplazarla. */
+document.addEventListener("click", e=>{
+  const lim=e.target.closest("#tbLimpiar");
+  if(lim){ tbLimpiar(); return; }
+  const dn=e.target.closest("[data-tbdonut]");
+  if(dn){ tbEstado().donut=dn.dataset.tbdonut; tocar(); renderTablero(); return; }
+  const el=e.target.closest("[data-tbdim]");
+  if(!el) return;
+  tbToggle(el.dataset.tbdim, el.dataset.tbval, e.ctrlKey||e.metaKey);
+});
 $("#ordGrupoNat").onclick=()=>aplicarOrden("grupoNat");
 $("#ordTipo").onclick=()=>aplicarOrden("tipo");
 $("#ordHoras").onclick=()=>aplicarOrden("horas");
@@ -4450,13 +5113,25 @@ $("#btnReconectar").onclick=async ()=>{
     const perm=await handlePendiente.requestPermission({mode:"readwrite"});
     if(perm==="granted"){
       const h=handlePendiente;
-      let d=null; try{ d=await leerJSONde(h); }catch(e){ d=null; }
-      if(d && !estadoVacio()){
+      let d=null, fallo=false;
+      try{ d=await leerJSONde(h); }catch(e){ fallo=true; }
+      /* GUARDA 1 — una lectura fallida no puede terminar en escritura.
+         Antes, si leerJSONde() fallaba, las dos ramas de abajo se saltaban y
+         el flujo caía igual en activarHandle(), que escribe el archivo con lo
+         que hubiera en memoria. Si la pantalla estaba vacía, lo borraba. */
+      if(fallo || !d){
+        avisoProteccion("No se vinculó el archivo",
+          "No se pudo leer <b>"+esc(h.name)+"</b>, así que no se vinculó ni se escribió nada: "+
+          "su contenido quedó intacto.<br><br>Prueba con <b>Abrir y vincular archivo</b>.");
+        marcar("No se pudo leer el archivo","warn"); return;
+      }
+      let escribir = true;
+      if(!estadoVacio()){
         if(confirm("El archivo contiene un levantamiento con "+resumenLev(d)+
           ".\n\nAceptar: cargarlo y reemplazar lo de pantalla.\nCancelar: conservar lo de pantalla y sobrescribir el archivo."))
-          { cargarEstado(d); guardarLocal(); }
-      } else if(d && estadoVacio()){ cargarEstado(d); guardarLocal(); }
-      await activarHandle(h);
+          { cargarEstado(d); guardarLocal(); escribir=false; }
+      } else { cargarEstado(d); guardarLocal(); escribir=false; }
+      await activarHandle(h, escribir);
     }
     else marcar("Permiso denegado sobre el archivo","warn");
   }catch(e){ marcar("No se pudo reconectar","warn"); }
@@ -4548,34 +5223,153 @@ $("#btnReiniciar").onclick=()=>{
   render(); marcar("Reiniciado","ok");
 };
 window.addEventListener("beforeunload", ev=>{
-  guardarLocal();
-  if(sucio && !fileHandle){ ev.preventDefault(); ev.returnValue=""; }
+  guardarLocal(); soltarPestana();
+  /* Avisa haya o no archivo vinculado: la escritura al archivo tarda ~1 s tras
+     el último cambio, y cerrar antes de eso también pierde trabajo. */
+  if(sucio){ ev.preventDefault(); ev.returnValue=""; }
 });
+window.addEventListener("pagehide", soltarPestana);
 
 /* ===================== arranque ===================== */
 try{ localStorage.setItem("__t","1"); localStorage.removeItem("__t"); }catch(e){ almacenOK=false; }
-const habia=restaurar();
-render();
-marcar(habia?"Levantamiento restaurado":"Listo para empezar", habia?"ok":"");
 
-/* recuperar el archivo vinculado de la sesión anterior */
-(async ()=>{
-  if(!window.showSaveFilePicker) return;
-  const h=await leerHandle();
-  if(!h) { render(); return; }
+/* ── GUARDA 3 — una sola pestaña ───────────────────────────────────────
+   Dos pestañas comparten el mismo localStorage y el mismo archivo: la última
+   en guardar pisa a la otra sin que ninguna se entere.
+
+   Se usan dos señales, porque ninguna basta sola:
+   · Un LATIDO con marca de tiempo. Es fiable, pero Chrome frena los
+     temporizadores de las pestañas de fondo, así que se refresca también al
+     volver a la pestaña y en cada cambio; la ventana de caducidad es amplia.
+   · Un PING por el evento `storage`, que las pestañas vivas contestan. Detecta
+     al instante a la otra pestaña y no depende de temporizadores.
+   Basta con que una de las dos avise. Si la que quedó marcada ya no existe
+   —se cerró de golpe, se apagó el equipo— el usuario entra con «Abrir de
+   todos modos»; es preferible preguntar de más que perder un levantamiento. */
+const K_LATIDO = CLAVE+"__pestana", K_PING = CLAVE+"__ping", K_PONG = CLAVE+"__pong";
+const MI_PESTANA = Math.random().toString(36).slice(2)+Date.now().toString(36);
+const CADUCA = 90000;
+let vivo = true, hayOtra = false, tLatido = null;
+
+function latir(){
+  if(!vivo) return;
+  try{ localStorage.setItem(K_LATIDO, JSON.stringify({id:MI_PESTANA, ts:Date.now()})); }catch(e){}
+}
+function latidoAjeno(){
   try{
-    const perm = await h.queryPermission({mode:"readwrite"});
-    if(perm==="granted"){
-      fileHandle=h;
-      if(estadoVacio()){
-        try{ const d=await leerJSONde(h); if(d){ cargarEstado(d); guardarLocal(); } }catch(e){}
-      }
-      marcar("Archivo vinculado: "+h.name,"vinc");
-    }
-    else handlePendiente=h;
-  }catch(e){ handlePendiente=h; }
+    const t=JSON.parse(localStorage.getItem(K_LATIDO)||"null");
+    return !!(t && t.id!==MI_PESTANA && (Date.now()-t.ts) < CADUCA);
+  }catch(e){ return false; }
+}
+function tomarTurno(){
+  latir(); clearInterval(tLatido); tLatido=setInterval(latir, 2000);
+  window.addEventListener("visibilitychange", latir);
+  window.addEventListener("focus", latir);
+}
+function soltarPestana(){
+  vivo=false; clearInterval(tLatido);
+  try{ const t=JSON.parse(localStorage.getItem(K_LATIDO)||"null");
+       if(t && t.id===MI_PESTANA) localStorage.removeItem(K_LATIDO); }catch(e){}
+}
+window.addEventListener("storage", ev=>{
+  if(!ev.newValue) return;
+  if(ev.key===K_PING && vivo){
+    try{ localStorage.setItem(K_PONG, JSON.stringify({id:MI_PESTANA, ts:Date.now()})); }catch(e){}
+    return;
+  }
+  if(ev.key===K_PONG){
+    try{ if(JSON.parse(ev.newValue).id!==MI_PESTANA) hayOtra=true; }catch(e){}
+  }
+});
+function hayOtraPestana(){
+  if(latidoAjeno()) return Promise.resolve(true);
+  hayOtra=false;
+  try{ localStorage.setItem(K_PING, JSON.stringify({id:MI_PESTANA, ts:Date.now()})); }catch(e){}
+  return new Promise(res=>setTimeout(()=>res(hayOtra || latidoAjeno()), 600));
+}
+
+function arrancar(){
+  tomarTurno();
+  const habia=restaurar();
   render();
+  marcar(habia?"Levantamiento restaurado":"Listo para empezar", habia?"ok":"");
+
+  /* recuperar el archivo vinculado de la sesión anterior */
+  (async ()=>{
+    if(!window.showSaveFilePicker) return;
+    const h=await leerHandle();
+    if(!h) { render(); return; }
+    try{
+      const perm = await h.queryPermission({mode:"readwrite"});
+      if(perm==="granted"){
+        if(estadoVacio()){
+          /* GUARDA 1 (bis) — no vincular un archivo que no se pudo leer
+             teniendo la pantalla vacía: el primer autoguardado lo borraría.
+             Antes este error se tragaba en silencio. */
+          let d=null, fallo=false;
+          try{ d=await leerJSONde(h); }catch(e){ fallo=true; }
+          if(fallo || !d){
+            handlePendiente=h;
+            avisoProteccion("No se vinculó el archivo",
+              "No se pudo leer <b>"+esc(h.name)+"</b> y esta pantalla está vacía. "+
+              "No se vinculó, para que ningún guardado automático lo sobrescriba.<br><br>"+
+              "Ábrelo con <b>Abrir y vincular archivo</b>.");
+            marcar("No se pudo leer el archivo recordado","warn"); render(); return;
+          }
+          cargarEstado(d); guardarLocal();
+        }
+        fileHandle=h;
+        marcar("Archivo vinculado: "+h.name,"vinc");
+      }
+      else handlePendiente=h;
+    }catch(e){ handlePendiente=h; }
+    render();
+  })();
+}
+
+const TEXTO_BLOQUEO =
+  "Ya tienes esta calculadora abierta en otra pestaña o ventana de este navegador. "+
+  "Las dos comparten la misma memoria y el mismo archivo, así que la última en guardar "+
+  "pisaría a la otra.<br><br>Ve a la pestaña que ya estaba abierta y sigue ahí.";
+(async ()=>{
+  if(await hayOtraPestana()){
+    $("#bloqueoTexto").innerHTML = TEXTO_BLOQUEO;
+    $("#capaBloqueo").classList.add("ver");
+  } else arrancar();
 })();
+$("#bloqueoReintentar").onclick=async ()=>{
+  if(await hayOtraPestana()){
+    $("#bloqueoTexto").innerHTML = TEXTO_BLOQUEO+
+      "<br><br><b>La otra pestaña sigue abierta.</b> Ciérrala y vuelve a intentar."; return; }
+  $("#capaBloqueo").classList.remove("ver"); arrancar();
+};
+$("#bloqueoIgual").onclick=()=>{
+  if(!confirm("Vas a trabajar con dos pestañas a la vez. Los cambios de una pueden sobrescribir los de la otra.\n\n¿Continuar de todos modos?")) return;
+  $("#capaBloqueo").classList.remove("ver"); arrancar();
+};
+$("#avisoCerrar").onclick=()=>$("#capaAviso").classList.remove("ver");
+
+/* ── Respaldos: las tres últimas versiones previas a una escritura ── */
+$("#btnRespaldos").onclick=async ()=>{
+  const lista=await leerRespaldos();
+  if(!lista.length){ alert("Todavía no hay respaldos. Se genera uno cada vez que se escribe el archivo vinculado."); return; }
+  const menu=lista.map((r,i)=>(i+1)+") "+FECHA_HORA(r.ts)+" — "+r.resumen).join("\n");
+  const q=prompt("Respaldos guardados en este navegador:\n\n"+menu+
+    "\n\nEscribe el número que quieres RESTAURAR en pantalla, o cancela.");
+  if(!q) return;
+  const r=lista[parseInt(q,10)-1];
+  if(!r){ alert("No hay un respaldo con ese número."); return; }
+  if(!confirm("Se reemplazará lo que tienes en pantalla por el respaldo del "+FECHA_HORA(r.ts)+
+    " ("+r.resumen+").\n\nSe descargará además una copia en JSON, por si acaso. ¿Continuar?")) return;
+  try{
+    const a=document.createElement("a");
+    a.href=URL.createObjectURL(new Blob([r.txt],{type:"application/json"}));
+    a.download="respaldo_"+new Date(r.ts).toISOString().slice(0,19).replace(/[:T]/g,"-")+".json";
+    a.click(); URL.revokeObjectURL(a.href);
+  }catch(e){}
+  cargarEstado(JSON.parse(r.txt)); guardarLocal(); render();
+  marcar("Respaldo restaurado en pantalla","ok");
+};
 })();
 </script>
 <div id="hojaImpresion"></div>
