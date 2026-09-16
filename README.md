@@ -72,6 +72,22 @@ El estado se guarda en el navegador y, si vinculas un archivo, se escribe en un
 JSON en disco que puedes versionar y compartir. `Descargar` exporta ese mismo JSON;
 `Cargar copia` lo restaura.
 
+## Seguridad del guardado
+
+El trabajo se autoguarda en el navegador y, si vinculas un archivo, también en
+disco. Ese automatismo puede destruir lo guardado cuando la app arranca en
+blanco —basta que el HTML cambie de ruta y `localStorage` se pierda—, así que la
+herramienta lleva tres guardas: una lectura fallida nunca termina en escritura,
+nunca se escribe un estado vacío sobre un archivo con contenido (y se desvincula
+el archivo en lugar de insistir), y se detecta la calculadora abierta en dos
+pestañas antes de arrancar. Antes de cada escritura se guarda un respaldo
+rotativo de las tres últimas versiones, recuperable desde el botón
+**Respaldos**.
+
+El post-mortem del incidente que originó esas guardas, con el patrón completo y
+un módulo reutilizable, está en
+[persistencia-segura-html](https://github.com/marcespal/persistencia-segura-html).
+
 ## Datos
 
 El archivo se publica **sin datos de ningún levantamiento**: sedes, categorías,
